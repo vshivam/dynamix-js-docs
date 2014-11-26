@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: dynamix_listener.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: dynamix_listener.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Copyright (C) The Ambient Dynamix Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ /**
+ *  @private
+ * @fileoverview
+ * The DynamixListener methods are called internally by the Dynamix Framework,
+ * these methods then fire the relevant callback and listener methods that were
+ * provided by the web client. The web client does not need to use the
+ * DynamixListener methods directly.
+ **/
+if (typeof DynamixListener === "undefined") {
+
+    /**
+	 @namespace DynamixListener
+     @private
+     **/
+    var DynamixListener = {
+
+        /**
+         * Called after the web client successfully binds itself with the Dynamix Framework.
+         * This is turn raises the listener provided by the web client while making a bind request.
+         * The web client after this can successfully open a session with Dynamix.
+         */
+        onDynamixFrameworkBound: function () {
+            Dynamix.Listeners['bind-state-listener'](Dynamix.Enums.BOUND);
+        },
+
+        /**
+         * Called after the web client loses connection to Dynamix. Raised in
+         * response to 'Dynamix.unbind()' or Dynamix Framework initiated unbinds.
+         * This is turn raises the listener provided by the web client while making a bind request.
+         * The web client can no more open sessions with Dynamix before binding again.
+         **/
+        onDynamixFrameworkUnbound: function () {
+            console.log("onDynamixFrameworkUnbound");
+            Dynamix.Listeners['bind-state-listener'](Dynamix.Enums.UNBOUND);
+        },
+
+        /**
+         * Called if no connection can be established to Dynamix. Note that it is
+         * NOT possible to interact with Dynamix if this event is raised.
+         */
+        onDynamixFrameworkBindError: function (result) {
+            console.log("onDynamixFrameworkBindError");
+            Dynamix.Listeners['bind-state-listener'](Dynamix.Enums.BIND_ERROR);
+        },
+
+
+        /**
+         * Called when Dynamix is waiting for the user to approve security
+         * authorization for the web client. Note that it is impossible to interact
+         * with Dynamix until the 'onSecurityAuthorizationGranted' event is raised,
+         * which may take some time, since the user is responsible for approving web
+         * application authorization.
+         **/
+        onAwaitingSecurityAuthorization: function () {
+            console.log("onAwaitingSecurityAuthorization");
+        },
+
+        /**
+         * Called after the user grants the web client security authorization. This
+         * event is followed by 'DynamixListener.onSessionOpened'.
+         **/
+        onSecurityAuthorizationGranted: function (id) {
+            console.log("onSecurityAuthorizationGranted : " + id);
+        },
+
+        /**
+         * Called if the user revokes the web client's security authorization. This
+         * event is followed by 'DynamixListener.onContextSupportRemoved' for any
+         * existing context support, and then 'DynamixListener.onSessionClosed'.
+         * possibly
+         **/
+        onSecurityAuthorizationRevoked: function () {
+            console.log("onSecurityAuthorizationRevoked");
+        },
+
+        /**
+         * Called when the web client's session has opened.
+         * This in turn calls the listener provided by the web client when opening a session. 
+         * The web client needs to open a session after it is successfully
+         * bound with Dynamix. The client can then create a handler using
+         * which it can make context requests to the Dynamix Framework.
+         *
+         * NOTE : This will be automatically called after the security
+         * authorization is granted by the user (if required).
+         **/
+        onSessionOpened: function (listenerId, sessionId) {
+            console.log("onSessionOpened");
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.SESSION_OPENED);
+        },
+
+        /**
+         * Called when the web client's Dynamix session has closed. This in turn will
+         * raise the session listener provided by the web client when opening a new Session.
+         *
+         * After this event the web client cannot make requests to the Dynamix Framework except
+         * apart from unbinding or opening new sessions.
+         **/
+        onSessionClosed: function (listenerId) {
+            console.log("onSessionClosed");
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.SESSION_CLOSED);
+        },
+
+        /**
+         * Called when the session is successfully opened and raises
+         * the callback provided by the web client when opening a Session.
+         **/
+        onSessionCallbackSuccess: function (callbackId) {
+            console.log("onSessionCallbackSuccess");
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.SUCCESS);
+        },
+
+        /**
+         * Called when the Dynamix Framework becomes active.
+         **/
+        onDynamixFrameworkActive: function () {
+            console.log("onDynamixFrameworkActive");
+        },
+
+        /**
+         * Called when the Dynamix Framework becomes inactive.
+         */
+        onDynamixFrameworkInactive: function () {
+            console.log("onDynamixFrameworkInactive");
+        },
+
+        /**
+         * Raised when a handler is successfully created and in turn
+         * provides a new handler object to the callback provided by the web client
+         * when creating a new context handler.
+         **/
+        onContextHandlerCallbackSuccess: function (callbackId, contextHandlerId) {
+            try {
+                console.log("new Handler successfully created with id : " + contextHandlerId);
+                var handler = new Dynamix.handler(
+                contextHandlerId);
+                Dynamix.Handlers[contextHandlerId] = handler;
+                Dynamix.Callbacks[callbackId](
+                Dynamix.Enums.SUCCESS, handler);
+            } catch (e) {
+                console.log(" Couldnt pass newly created handler to callback :" + e);
+            }
+        },
+
+        /**
+         * The following onContextSupportCallback* methods in turn raise the callback that
+         * was provided while adding the context support.
+         **/
+
+        /**
+         * Called when the context support requested by the web client was added successfully. 
+         **/
+        onContextSupportCallbackSuccess: function (callbackId, result) {
+            console.log('onContextSupportCallbackSuccess');
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.SUCCESS, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when the context support requested by the web client was added successfully. 
+         **/
+        onContextSupportCallbackWarning: function (callbackId, result) {
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.WARNING, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when the context support requested by the web client failed. 
+         **/
+        onContextSupportCallbackFailure: function (callbackId, result) {
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.FAILURE, convertToJsonObject(result));
+        },
+
+        /** 
+         * Called when a plugin installation is in progress with the %age progress.
+         **/
+        onContextSupportCallbackProgress: function (callbackId, result) {
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.INSTALL_PROGRESS, progress);
+        },
+
+        onCallbackFailure: function (callbackId, result) {
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.FAILURE, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when a new context result is received from the Dynamix Framework. 
+         * The result is passed to the listener that was provided by the web client 
+         * while adding the context support.
+         **/
+        onContextResult: function (listenerId, result) {
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.PLUGIN_RESULT, convertToJsonObject(result));
+        },
+
+        /** 
+         * Called when a plugin is enabled. The result 
+         * is passed on to the listener that was provided by the web client while 
+         * opening a new session with Dynamix. 
+         * Refer to with {@link Dynamix~openDynamixSession}.
+         **/
+        onContextPluginEnabled: function (listenerId, result) {
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.PLUGIN_ENABLED, convertToJsonObject(result))
+        },
+
+        /** 
+         * Called when a plugin is disabled. The result 
+         * is passed on to the listener that was provided by the web client while 
+         * opening a new session with Dynamix.
+         **/
+        onContextPluginDisabled: function (listenerId, result) {
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.PLUGIN_DISABLED, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when a plugin installation requested by the web client fails.
+         **/
+        onContextPluginInstallFailed: function (plugin, message) {
+            console.log();
+        },
+
+        /**
+         * Called when a plugin is successfully installed. This in turn sends the details of the 
+         * installed plugin to the listener provided by the web client 
+         * while opening a new session with Dynamix
+         **/
+        onContextPluginInstalled: function (listenerId, result) {
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.PLUGIN_INSTALLED, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when a plugin is successfully uninstalled. This in turn sends the details of the 
+         * uninstalled plugin to the listener provided by the web client 
+         * while opening a new Dynamix Session. 
+         **/
+        onContextPluginUninstalled: function (listenerId, result) {
+            Dynamix.Listeners[listenerId](
+            Dynamix.Enums.PLUGIN_UNINSTALLED, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when an error occurs with the plugin. This in turn sends the details of the 
+         * error to the listener provided by the web client 
+         * while opening a new Dynamix Session. 
+         **/
+        onContextPluginError: function (callbackId, result) {
+            Dynamix.Listeners[callbackId](
+            Dynamix.Enums.PLUGIN_ERROR, convertToJsonObject(result));
+        },
+
+        /**
+         * Called when a context request made by the web client is successful. Raises the callback 
+         * that was provided while making the context request with the relevant result.
+         **/
+        onContextRequestCallbackSuccess: function (callbackId, result) {
+            Dynamix.Callbacks[callbackId](
+            Dynamix.Enums.SUCCESS, convertToJsonObject(result));
+        }, 
+
+        onContextPluginDiscoveryStarted : function(listenerId) {
+            Dynamix.Listeners[listenerId](Dynamix.Enums.PLUGIN_DISCOVERY_STARTED);
+        }, 
+
+        onContextPluginDiscoveryFinished : function(listenerId, result) {
+            Dynamix.Listeners[listenerId](Dynamix.Enums.PLUGIN_DISCOVERY_FINISHED, 
+                convertToJsonObject(convertToJsonObject(result)));
+        },
+
+        convertToJsonObject : function(json) {
+        // Perform type checking
+            if (typeof (json) == "string") {
+                /*
+                 * The incoming json is a string, so simply try to parse it.
+                 */
+                return JSON.parse(json);
+            } else {
+                /*
+                 * The incoming json is not a string, so try to stringify it before
+                 * parsing.
+                 */
+                return JSON.parse(JSON.stringify(json));
+            }
+        }
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Dynamix.handler.html">handler</a></li></ul><h3>Namespaces</h3><ul><li><a href="Dynamix.html">Dynamix</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-dev</a> on Mon Jul 21 2014 15:20:05 GMT+0800 (SGT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
